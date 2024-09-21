@@ -1,6 +1,24 @@
 import pygame
 from sys import exit
 
+def display_score():
+    current_time = pygame.time.get_ticks()
+    score_surf = test_font.render(f'{current_time}',False,(64,64,64))
+    score_rect = score_surf.get_rect(center = (400,50))
+    screen.blit(score_surf,score_rect)
+    #print(current_time)
+
+def draw_grid(x, y):
+    for i in range(0,x,50):
+        pygame.draw.line(screen, 'Black',(0,i),(x,i))
+        pygame.draw.line(screen, 'Black',(i,0),(i,x))
+
+def showPos():
+    ct = pygame.time.get_ticks()
+    if ct % 60 == 0:
+        print("player position: ", player_rect.x)
+        print("snail position: ", snail_rect.x)
+
 pygame.init()
 screen = pygame.display.set_mode((800,400))
 pygame.display.set_caption('Runner')
@@ -12,8 +30,8 @@ game_active = True
 sky_surf = pygame.image.load('graphics/Sky.png').convert()
 ground_surf = pygame.image.load('graphics/ground.png').convert()
 
-score_surf = test_font.render('My game', False, (64,64,64))
-score_rect = score_surf.get_rect(center = (400,50))
+#score_surf = test_font.render('My game', False, (64,64,64))
+#score_rect = score_surf.get_rect(center = (400,50))
 snail_surf = pygame.image.load('graphics/snail1.png').convert_alpha()
 snail_rect = snail_surf.get_rect(bottomright = (600, 300))
 
@@ -26,11 +44,15 @@ numJump = 0
 onGround = True
 belowGround = False
 
+#toggle modes
 allow_x_movement = False
+have_grid = False
+show_pos_player = False
 
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            print("Game Exited.")
             pygame.quit()
             exit()
 
@@ -44,7 +66,19 @@ while True:
                     elif allow_x_movement == False:
                         allow_x_movement = True
                     print("x mvmt: ", allow_x_movement)
-
+                if keys[pygame.K_g]:
+                    if have_grid:
+                        have_grid = False
+                    elif have_grid == False:
+                        have_grid = True
+                    print("grid: ", have_grid)
+                if keys[pygame.K_p]:
+                    if show_pos_player:
+                        show_pos_player = False
+                    elif show_pos_player == False:
+                        show_pos_player = True
+                    print("show player pos: ", show_pos_player)
+            
             # Horizontal movement
             if keys[pygame.K_LEFT]:
                 player_xspeed = -5  # Move left
@@ -91,13 +125,19 @@ while True:
         #blit = block image transfer
         screen.blit(sky_surf, (0,0)) 
         screen.blit(ground_surf, (0,300))
-        pygame.draw.rect(screen, '#c0e8ec', score_rect)
-        pygame.draw.rect(screen, '#c0e8ec', score_rect, 10)
+        display_score()
+        if(have_grid):
+            draw_grid(800,400)
+        if(show_pos_player):
+            showPos()
+
+        #pygame.draw.rect(screen, '#c0e8ec', score_rect)
+        #pygame.draw.rect(screen, '#c0e8ec', score_rect, 10)
         
         #pygame.draw.ellipse(screen, 'Brown', pygame.Rect(50,200,100,100))
         #pygame.draw.line(screen, 'Gold',(0,0),pygame.mouse.get_pos(),10)
         
-        screen.blit(score_surf, score_rect)
+        #screen.blit(score_surf, score_rect)
 
         snail_rect.x -= 4
         screen.blit(snail_surf, snail_rect)
