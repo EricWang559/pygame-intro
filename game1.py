@@ -1,4 +1,5 @@
 import pygame
+import random
 from sys import exit
 
 def display_score():
@@ -25,6 +26,7 @@ pygame.display.set_caption('Runner')
 clock = pygame.time.Clock()
 test_font = pygame.font.Font('font/Pixeltype.ttf', 50)
 game_active = True
+start_time = 0
 
 
 sky_surf = pygame.image.load('graphics/Sky.png').convert()
@@ -39,6 +41,10 @@ player_surf = pygame.image.load('graphics/player_walk_1.png').convert_alpha()
 player_rect = player_surf.get_rect(midbottom = (80,300))
 player_gravity = 0
 player_xspeed = 0
+
+pill_surf = pygame.image.load('graphics/pill.png').convert_alpha()
+pill_rect = player_surf.get_rect(midtop = (int(random.randrange(400,500)),(int(random.randrange(0,300)))))
+
 numJump = 0
 
 onGround = True
@@ -48,6 +54,8 @@ belowGround = False
 allow_x_movement = False
 have_grid = False
 show_pos_player = False
+show_pill = True
+speed_factor = 1
 
 while True:
     for event in pygame.event.get():
@@ -81,9 +89,9 @@ while True:
             
             # Horizontal movement
             if keys[pygame.K_LEFT]:
-                player_xspeed = -5  # Move left
+                player_xspeed = -5 * speed_factor  # Move left
             if keys[pygame.K_RIGHT]:
-                player_xspeed = 5  # Move right
+                player_xspeed = 5 * speed_factor # Move right
             if keys[pygame.K_LEFT] and keys[pygame.K_RIGHT]:
                 player_xspeed = 0
             if not keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
@@ -120,6 +128,10 @@ while True:
             if event.type == pygame.KEYDOWN:
                 game_active = True
                 snail_rect.left = 800
+                start_time = 0
+                speed_factor = 1
+                show_pill = True
+                pill_rect = player_surf.get_rect(midtop = (int(random.randrange(400,500)),(int(random.randrange(0,300)))))
 
     if game_active:
         #blit = block image transfer
@@ -143,6 +155,18 @@ while True:
         screen.blit(snail_surf, snail_rect)
         if snail_rect.right <= 0: snail_rect.left = 800
         #print(player_rect.left)
+
+        #pill
+        if show_pill:
+            t1 = 0
+            screen.blit(pill_surf, pill_rect)
+            if player_rect.colliderect(pill_rect):
+                speed_factor = 1.4
+                t1 = pygame.time.get_ticks()
+                print("pill taken")
+                show_pill = False
+            if pygame.time.get_ticks() - t1 == 1000 and t1 != 0:
+                speed_factor = 1 
 
         #player
         player_gravity += 1
@@ -200,5 +224,3 @@ while True:
 
     pygame.display.update()
     clock.tick(60) #framerate = 60
-
-     
