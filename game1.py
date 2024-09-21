@@ -65,7 +65,7 @@ game_message = test_font.render('Press space to run',False,(111,196,169))
 game_message_rect = game_message.get_rect(center = (400,320))
 
 pill_surf = pygame.image.load('graphics/pill.png').convert_alpha()
-pill_rect = pill_surf.get_rect(midtop = (int(random.randrange(400,500)),(int(random.randrange(0,300)))))
+pill_rect = pill_surf.get_rect(midtop = (int(random.randrange(250, 750)), (int(random.randrange(0, 300)))))
 show_pill = True
 pill_count = 0
 pill_clicked = False
@@ -76,9 +76,10 @@ onGround = True
 belowGround = False
 
 #toggle modes
-allow_x_movement = False
+allow_x_movement = True
 have_grid = False
 show_pos_player = False
+inf_jumps = False
 
 #screens
 snail_screen = True
@@ -113,10 +114,17 @@ while True:
                     elif show_pos_player == False:
                         show_pos_player = True
                     print("show player pos: ", show_pos_player)
+                if keys[pygame.K_t]:
+                    inf_jumps = not inf_jumps
+                    print("inf jumps on")
+
                 if keys[pygame.K_r]:
                     game_active = False
                     sleep(0.1)
                     snail_screen = True
+                if keys[pygame.K_q]:
+                    print("Game Exited through Q.")
+                    exit()
             
             # Horizontal movement
             if keys[pygame.K_LEFT]:
@@ -129,8 +137,11 @@ while True:
                 player_xspeed = 0
                 
             # Jumping with the up arrow key, only if on the ground
-            if (keys[pygame.K_UP] or keys[pygame.K_SPACE]) and onGround:
-                player_gravity = -20
+            if (keys[pygame.K_UP] or keys[pygame.K_SPACE]):
+                if onGround:
+                    player_gravity = -20
+                if inf_jumps:
+                    player_gravity = -20
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if player_rect.collidepoint(event.pos):
@@ -167,7 +178,7 @@ while True:
                     start_time = int(pygame.time.get_ticks() / 1000)
                     speed_factor = 1
                     show_pill = True
-                    pill_rect = player_surf.get_rect(midtop = (int(random.randrange(400, 500)), (int(random.randrange(0, 300)))))
+                    pill_rect = pill_surf.get_rect(midtop = (int(random.randrange(250, 750)), (int(random.randrange(0, 300)))))
             
             if snail_screen:
                 print("snail screen")
@@ -194,7 +205,12 @@ while True:
 
         snail_rect.x -= snail_speed
         screen.blit(snail_surf, snail_rect)
-        if snail_rect.right <= 0: snail_rect.left = 800
+        if snail_rect.right <= 0: 
+            snail_rect.left = 800
+            if random.randint(0,2) == 1:
+                show_pill = True
+                pill_rect = pill_surf.get_rect(midtop = (int(random.randrange(250, 750)), (int(random.randrange(0, 300)))))
+            
         #print(player_rect.left)
 
         #pill
@@ -202,9 +218,10 @@ while True:
             t1 = 0
             screen.blit(pill_surf, pill_rect)
             if player_rect.colliderect(pill_rect):
-                speed_factor = 1.4
+                #speed_factor = 0.5
+                pill_count+=1
                 t1 = pygame.time.get_ticks()
-                print("pill taken")
+                print(f"{pill_count} pills taken")
                 show_pill = False
             if pygame.time.get_ticks() - t1 == 1000 and t1 != 0:
                 speed_factor = 1 
