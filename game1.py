@@ -21,6 +21,7 @@ player_gravity = 0
 player_xspeed = 0
 numJump = 0
 
+onGround = True
 belowGround = False
 
 while True:
@@ -32,16 +33,25 @@ while True:
         keys = pygame.key.get_pressed()
 
         if event.type == pygame.KEYDOWN:
-            if (event.key == pygame.K_SPACE or pygame.K_UP) and player_rect.bottom == 300:
+            if (event.key == pygame.K_SPACE or pygame.K_UP) and onGround:
                 numJump+=1
                 print(f'jump {numJump}')
                 player_gravity = -20
 
+                if event.key == pygame.K_LEFT:
+                    player_xspeed = -7  # Move left
+                if event.key == pygame.K_RIGHT:
+                    player_xspeed = 7   # Move right
+
             if event.key == pygame.K_LEFT:
-                player_xspeed = -5  # Move left
+                player_xspeed = -7  # Move left
+                if onGround:
+                    player_gravity = 0
 
             if event.key == pygame.K_RIGHT:
-                player_xspeed = 5   # Move right
+                player_xspeed = 7   # Move right
+                if onGround:
+                    player_gravity = 0
 
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT or pygame.K_RIGHT:
@@ -104,19 +114,29 @@ while True:
         print("border crossing at x < 0")
         player_rect.left = 800
 
+    #move to bottom ground
     if player_rect.bottom <= 0: 
         player_rect.bottom = 600
         belowGround = True
     
+    #top ground 
     if player_rect.bottom >= 300 and not belowGround: 
         player_rect.bottom = 300
 
+    #bottom ground
     elif belowGround and player_rect.bottom > 400:
         player_rect.bottom = 400
     
+    #back on top ground
     if player_rect.bottom <= 300 and player_rect.bottom >= 0:
         belowGround = False
     
+    #check if on ground
+    if player_rect.bottom == 300:
+        onGround = True
+    else:
+        onGround = False
+
     screen.blit(player_surf,player_rect)
     
 
