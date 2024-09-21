@@ -1,6 +1,7 @@
 import pygame
 import random
 from sys import exit
+from time import sleep
 
 def display_score():
     current_time = int(pygame.time.get_ticks() / 1000) - start_time
@@ -8,6 +9,9 @@ def display_score():
     score_rect = score_surf.get_rect(center = (400,50))
     screen.blit(score_surf,score_rect)
     #print(current_time)
+    return current_time
+
+score = 0
 
 def draw_grid(x, y):
     for i in range(0,x,50):
@@ -25,7 +29,9 @@ screen = pygame.display.set_mode((800,400))
 pygame.display.set_caption('Runner')
 clock = pygame.time.Clock()
 test_font = pygame.font.Font('font/Pixeltype.ttf', 50)
-game_active = True
+
+game_active = False #Show loading screen first
+
 start_time = 0
 global_time = pygame.time.get_ticks()
 
@@ -37,7 +43,7 @@ ground_surf = pygame.image.load('graphics/ground.png').convert()
 #score_rect = score_surf.get_rect(center = (400,50))
 snail_surf = pygame.image.load('graphics/snail1.png').convert_alpha()
 snail_rect = snail_surf.get_rect(bottomright = (600, 300))
-snail_speed = 0
+snail_speed = 4
 
 player_surf = pygame.image.load('graphics/player_walk_1.png').convert_alpha()
 player_rect = player_surf.get_rect(midbottom = (80,300))
@@ -45,8 +51,21 @@ player_gravity = 0
 player_xspeed = 0
 speed_factor = 1
 
+#INTRO SCREEN
+player_stand = pygame.image.load('graphics/player_stand.png').convert_alpha()
+#player_stand = pygame.transform.scale(player_stand, (200,400))
+#player_stand = pygame.transform.scale2x(player_stand)
+player_stand = pygame.transform.rotozoom(player_stand,0,2)
+player_stand_rect = player_stand.get_rect(center = (400,200))
+
+game_name = test_font.render('Pixel Runner', False,(111,196,169))
+game_name_rect = game_name.get_rect(center = (400,80))
+
+game_message = test_font.render('Press space to run',False,(111,196,169))
+game_message_rect = game_message.get_rect(center = (400,320))
+
 pill_surf = pygame.image.load('graphics/pill.png').convert_alpha()
-pill_rect = player_surf.get_rect(midtop = (int(random.randrange(400,500)),(int(random.randrange(0,300)))))
+pill_rect = pill_surf.get_rect(midtop = (int(random.randrange(400,500)),(int(random.randrange(0,300)))))
 show_pill = True
 pill_count = 0
 pill_clicked = False
@@ -62,7 +81,7 @@ have_grid = False
 show_pos_player = False
 
 #screens
-snail_screen = False
+snail_screen = True
 shop_screen = False
 
 while True:
@@ -94,6 +113,10 @@ while True:
                     elif show_pos_player == False:
                         show_pos_player = True
                     print("show player pos: ", show_pos_player)
+                if keys[pygame.K_r]:
+                    game_active = False
+                    sleep(0.1)
+                    snail_screen = True
             
             # Horizontal movement
             if keys[pygame.K_LEFT]:
@@ -136,14 +159,16 @@ while True:
             '''
         else:
             if event.type == pygame.KEYDOWN:
+                if not game_active:
                     game_active = True
-                    snail_rect.left = 800
-                    player_rect.midbottom = (80,300) 
+                    snail_rect.left = 800  # Reset the snail position
+                    snail_speed = 4        # Reset snail speed
+                    player_rect.midbottom = (80, 300) 
                     start_time = int(pygame.time.get_ticks() / 1000)
                     speed_factor = 1
                     show_pill = True
-                    pill_rect = player_surf.get_rect(midtop = (int(random.randrange(400,500)),(int(random.randrange(0,300)))))
-                
+                    pill_rect = player_surf.get_rect(midtop = (int(random.randrange(400, 500)), (int(random.randrange(0, 300)))))
+            
             if snail_screen:
                 print("snail screen")
             elif shop_screen:
@@ -153,7 +178,7 @@ while True:
         #blit = block image transfer
         screen.blit(sky_surf, (0,0)) 
         screen.blit(ground_surf, (0,300))
-        display_score()
+        score = display_score()
         if(have_grid):
             draw_grid(800,400)
         if(show_pos_player):
@@ -253,6 +278,9 @@ while True:
     else: #INTRO/MENU SCREEN
         if snail_screen:
             screen.fill((94,129,162))
+            screen.blit(player_stand, player_stand_rect)
+            screen.blit(game_name, game_name_rect)
+            screen.blit(game_message, game_message_rect)
         elif shop_screen: #shop screen
             screen.fill((255,255,255))
         else: #dead screen
