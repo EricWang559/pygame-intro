@@ -24,7 +24,7 @@ numJump = 0
 onGround = True
 belowGround = False
 
-allow_x_movement = True
+allow_x_movement = False
 
 while True:
     for event in pygame.event.get():
@@ -34,23 +34,29 @@ while True:
 
         keys = pygame.key.get_pressed()
 
-        if allow_x_movement:
-            # Horizontal movement
-            if keys[pygame.K_LEFT]:
-                player_xspeed = -7  # Move left
-            if keys[pygame.K_RIGHT]:
-                player_xspeed = 7  # Move right
-            if keys[pygame.K_LEFT] and keys[pygame.K_RIGHT]:
-                player_xspeed = 0
-            if not keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
-                player_xspeed = 0
+        if event.type == pygame.KEYDOWN:
+            if keys[pygame.K_h]:
+                if allow_x_movement:
+                    allow_x_movement = False
+                elif allow_x_movement == False:
+                    allow_x_movement = True
+                print("x mvmt: ", allow_x_movement)
+
+        # Horizontal movement
+        if keys[pygame.K_LEFT]:
+            player_xspeed = -5  # Move left
+        if keys[pygame.K_RIGHT]:
+            player_xspeed = 5  # Move right
+        if keys[pygame.K_LEFT] and keys[pygame.K_RIGHT]:
+            player_xspeed = 0
+        if not keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
+            player_xspeed = 0
             
         # Jumping with the up arrow key, only if on the ground
-        if keys[pygame.K_UP]: #and onGround:
+        if keys[pygame.K_UP] and onGround:
             player_gravity = -20
 
-        if keys[pygame.K_h]:
-            allow_x_movement = not allow_x_movement
+        
 
 
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -97,8 +103,9 @@ while True:
     player_gravity += 1
     player_rect.y += player_gravity
 
-    player_rect.x += player_xspeed
-    
+    if(allow_x_movement):
+        player_rect.x += player_xspeed
+
     #right wall
     if player_rect.left >= 800:
         print("border crossing at x > 800")
@@ -117,12 +124,10 @@ while True:
     
     #top ground 
     if player_rect.bottom >= 300 and not belowGround: 
-        print("on ground")
         player_rect.bottom = 300
 
     #bottom ground
     elif belowGround and player_rect.bottom > 400:
-        print("on bottom ground")
         player_rect.bottom = 400
     
     #back on top ground
