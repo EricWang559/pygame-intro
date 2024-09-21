@@ -3,8 +3,8 @@ import random
 from sys import exit
 
 def display_score():
-    current_time = pygame.time.get_ticks()
-    score_surf = test_font.render(f'{current_time}',False,(64,64,64))
+    current_time = int(pygame.time.get_ticks() / 1000) - start_time
+    score_surf = test_font.render(f'Score: {current_time}',False,(64,64,64))
     score_rect = score_surf.get_rect(center = (400,50))
     screen.blit(score_surf,score_rect)
     #print(current_time)
@@ -27,6 +27,7 @@ clock = pygame.time.Clock()
 test_font = pygame.font.Font('font/Pixeltype.ttf', 50)
 game_active = True
 start_time = 0
+global_time = pygame.time.get_ticks()
 
 
 sky_surf = pygame.image.load('graphics/Sky.png').convert()
@@ -36,14 +37,19 @@ ground_surf = pygame.image.load('graphics/ground.png').convert()
 #score_rect = score_surf.get_rect(center = (400,50))
 snail_surf = pygame.image.load('graphics/snail1.png').convert_alpha()
 snail_rect = snail_surf.get_rect(bottomright = (600, 300))
+snail_speed = 0
 
 player_surf = pygame.image.load('graphics/player_walk_1.png').convert_alpha()
 player_rect = player_surf.get_rect(midbottom = (80,300))
 player_gravity = 0
 player_xspeed = 0
+speed_factor = 1
 
 pill_surf = pygame.image.load('graphics/pill.png').convert_alpha()
 pill_rect = player_surf.get_rect(midtop = (int(random.randrange(400,500)),(int(random.randrange(0,300)))))
+show_pill = True
+pill_count = 0
+pill_clicked = False
 
 numJump = 0
 
@@ -54,8 +60,10 @@ belowGround = False
 allow_x_movement = False
 have_grid = False
 show_pos_player = False
-show_pill = True
-speed_factor = 1
+
+#screens
+snail_screen = False
+shop_screen = False
 
 while True:
     for event in pygame.event.get():
@@ -104,6 +112,8 @@ while True:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if player_rect.collidepoint(event.pos):
                     player_gravity = -20
+                if pill_rect.collidepoint(event.pos):
+                    pill_clicked = True
 
             '''
             if event.type == pygame.KEYUP:
@@ -126,13 +136,19 @@ while True:
             '''
         else:
             if event.type == pygame.KEYDOWN:
-                game_active = True
-                snail_rect.left = 800
-                start_time = 0
-                speed_factor = 1
-                show_pill = True
-                pill_rect = player_surf.get_rect(midtop = (int(random.randrange(400,500)),(int(random.randrange(0,300)))))
-
+                    game_active = True
+                    snail_rect.left = 800
+                    player_rect.midbottom = (80,300) 
+                    start_time = int(pygame.time.get_ticks() / 1000)
+                    speed_factor = 1
+                    show_pill = True
+                    pill_rect = player_surf.get_rect(midtop = (int(random.randrange(400,500)),(int(random.randrange(0,300)))))
+                
+            if snail_screen:
+                print("snail screen")
+            elif shop_screen:
+                print("shop screen")
+    
     if game_active:
         #blit = block image transfer
         screen.blit(sky_surf, (0,0)) 
@@ -151,7 +167,7 @@ while True:
         
         #screen.blit(score_surf, score_rect)
 
-        snail_rect.x -= 4
+        snail_rect.x -= snail_speed
         screen.blit(snail_surf, snail_rect)
         if snail_rect.right <= 0: snail_rect.left = 800
         #print(player_rect.left)
@@ -210,17 +226,38 @@ while True:
             onGround = False
 
         screen.blit(player_surf,player_rect)
-        
-        '''
+
+        #MOUSE
         mouse_pos = pygame.mouse.get_pos()
+        
         if player_rect.collidepoint(mouse_pos):
-            print('collision')
-        print(pygame.mouse.get_pressed())
-        '''
+            print("mouse on player")
+        
+        if pill_rect.collidepoint(mouse_pos):
+            print("mouse on pill")
+
+        if snail_rect.collidepoint(mouse_pos):
+            print("mouse on snail")
+
+        if pill_clicked:
+            print('click')
+            game_active = False
+            shop_screen = True
+        
         if (player_rect.colliderect(snail_rect)):
             game_active = False
+            snail_screen = True
+            pill_count+=1
+
+
     else: #INTRO/MENU SCREEN
-        screen.fill('Black')
+        if snail_screen:
+            screen.fill((94,129,162))
+        elif shop_screen: #shop screen
+            screen.fill((255,255,255))
+        else: #dead screen
+            screen.fill('Black')
+            
 
     pygame.display.update()
     clock.tick(60) #framerate = 60
