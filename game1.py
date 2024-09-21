@@ -7,11 +7,32 @@ def display_score():
     current_time = int(pygame.time.get_ticks() / 1000) - start_time
     score_surf = test_font.render(f'Score: {current_time}',False,(64,64,64))
     score_rect = score_surf.get_rect(center = (400,50))
+
+    pill_message_surf = test_font.render(f'Pills: {pill_count}',False,(64,64,64))
+    pill_message_rect = pill_message_surf.get_rect(topright = (800, 0))
+    
     screen.blit(score_surf,score_rect)
+    screen.blit(pill_message_surf,pill_message_rect)
     #print(current_time)
     return current_time
 
 score = 0
+
+'''
+def display_hp():
+    hearts = 3
+    heart_xpos = 0
+    heart_surf = pygame.image.load('graphics/heart.png')
+    heart_rect = heart_surf.get_rect(topleft = (0,heart_xpos))
+    if player_rect.colliderect(snail_rect):
+        hearts -=1
+
+    for i in range (hearts):
+        screen.blit(heart_surf, heart_rect)
+        heart_xpos+=30
+        heart_rect = heart_surf.get_rect(topleft = (0,heart_xpos))
+        
+'''
 
 def draw_grid(x, y):
     for i in range(0,x,50):
@@ -64,11 +85,16 @@ game_name_rect = game_name.get_rect(center = (400,80))
 game_message = test_font.render('Press space to run',False,(111,196,169))
 game_message_rect = game_message.get_rect(center = (400,320))
 
+scprinted = False
+shopprinted = False
+
+
 pill_surf = pygame.image.load('graphics/pill.png').convert_alpha()
-pill_rect = pill_surf.get_rect(midtop = (int(random.randrange(250, 750)), (int(random.randrange(0, 300)))))
+pill_rect = pill_surf.get_rect(midbottom = (int(random.randrange(250, 750)), (int(random.randrange(50, 300)))))
 show_pill = True
 pill_count = 0
 pill_clicked = False
+pill_got = False
 
 numJump = 0
 
@@ -84,6 +110,19 @@ inf_jumps = False
 #screens
 snail_screen = True
 shop_screen = False
+
+#Timer
+obstacle_timer = pygame.USEREVENT + 1
+pygame.time.set_timer(obstacle_timer, 900)
+
+
+#Timer 2
+pill_timer = pygame.USEREVENT + 2
+def pillTimer():
+    if player_rect.colliderect(pill_rect):
+        pygame.time.set_timer(pill_timer, 3000)
+    else:
+        pass
 
 while True:
     for event in pygame.event.get():
@@ -116,11 +155,10 @@ while True:
                     print("show player pos: ", show_pos_player)
                 if keys[pygame.K_t]:
                     inf_jumps = not inf_jumps
-                    print("inf jumps on")
+                    print("inf jumps on" if inf_jumps else "inf jumps off")
 
                 if keys[pygame.K_r]:
                     game_active = False
-                    sleep(0.1)
                     snail_screen = True
                 if keys[pygame.K_q]:
                     print("Game Exited through Q.")
@@ -178,13 +216,33 @@ while True:
                     start_time = int(pygame.time.get_ticks() / 1000)
                     speed_factor = 1
                     show_pill = True
-                    pill_rect = pill_surf.get_rect(midtop = (int(random.randrange(250, 750)), (int(random.randrange(0, 300)))))
-            
+                    pill_got = False
+                    pill_count = 0
+                    pill_rect = pill_surf.get_rect(midbottom = (int(random.randrange(250, 750)), (int(random.randrange(50, 300)))))
+                    scprinted = False
+                    shopprinted = False
+
             if snail_screen:
-                print("snail screen")
+                
+                if not scprinted:
+                    print("snail screen")
+                    scprinted = True
+
             elif shop_screen:
-                print("shop screen")
-    
+                
+                if not shopprinted:
+                    print("shop screen")
+                    shopprinted = True
+
+        if event.type == obstacle_timer:
+            #print("timer")
+            pass
+        if event.type == pill_timer:
+            if not pill_got:
+                speed_factor = 1
+                print("pill effect up!")
+                pill_got = False
+
     if game_active:
         #blit = block image transfer
         screen.blit(sky_surf, (0,0)) 
@@ -207,24 +265,24 @@ while True:
         screen.blit(snail_surf, snail_rect)
         if snail_rect.right <= 0: 
             snail_rect.left = 800
-            if random.randint(0,2) == 1:
+            if random.randint(0,2) == (1 or 2):
                 show_pill = True
-                pill_rect = pill_surf.get_rect(midtop = (int(random.randrange(250, 750)), (int(random.randrange(0, 300)))))
+                pill_rect = pill_surf.get_rect(midbottom = (int(random.randrange(250, 750)), (int(random.randrange(50, 300)))))
             
         #print(player_rect.left)
 
         #pill
         if show_pill:
-            t1 = 0
             screen.blit(pill_surf, pill_rect)
+            pillTimer()
             if player_rect.colliderect(pill_rect):
-                #speed_factor = 0.5
+                #peed_factor = 1.5
                 pill_count+=1
                 t1 = pygame.time.get_ticks()
                 print(f"{pill_count} pills taken")
                 show_pill = False
-            if pygame.time.get_ticks() - t1 == 1000 and t1 != 0:
-                speed_factor = 1 
+                pill_got = True
+                
 
         #player
         player_gravity += 1
@@ -281,23 +339,37 @@ while True:
         if snail_rect.collidepoint(mouse_pos):
             print("mouse on snail")
 
+        
+        # touch snail
+        if (player_rect.colliderect(snail_rect)):
+            game_active = False
+            snail_screen = True
+        
         if pill_clicked:
             print('click')
             game_active = False
             shop_screen = True
-        
-        if (player_rect.colliderect(snail_rect)):
-            game_active = False
-            snail_screen = True
-            pill_count+=1
+            snail_screen = False
+            pill_clicked = False
 
 
     else: #INTRO/MENU SCREEN
         if snail_screen:
             screen.fill((94,129,162))
             screen.blit(player_stand, player_stand_rect)
+
+            score_message = test_font.render(f"Your score: {score}", False, (111,196,169))
+            score_message_rect = score_message.get_rect(center = (400,330))
             screen.blit(game_name, game_name_rect)
-            screen.blit(game_message, game_message_rect)
+
+            pill_message = test_font.render(f"Pills eaten: {pill_count}", False, (111,196,169))
+            pill_message_rect = pill_message.get_rect(center = (400, 360))
+
+            if score == 0:
+                screen.blit(game_message, game_message_rect)
+            else:
+                screen.blit(score_message, score_message_rect)
+                screen.blit(pill_message, pill_message_rect)
         elif shop_screen: #shop screen
             screen.fill((255,255,255))
         else: #dead screen
