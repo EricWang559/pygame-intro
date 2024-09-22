@@ -1,5 +1,6 @@
 import pygame
 import random
+from random import randint
 from sys import exit
 from time import sleep
 
@@ -39,11 +40,69 @@ def draw_grid(x, y):
         pygame.draw.line(screen, 'Black',(0,i),(x,i))
         pygame.draw.line(screen, 'Black',(i,0),(i,x))
 
-def showPos():
-    ct = pygame.time.get_ticks()
-    if ct % 60 == 0:
-        print("player position: ", player_rect.x)
-        print("snail position: ", snail_rect.x)
+# Initialize variables to store previous position, time, and the last print time
+prev_x, prev_y = 0, 0
+prev_time = pygame.time.get_ticks()
+last_print_time = 0  # Time when the last position was printed
+
+def showPos(player_rect):
+    global prev_x, prev_y, prev_time, last_print_time
+    
+    # Get the current time and position
+    current_time = pygame.time.get_ticks()
+    current_x, current_y = player_rect.x, player_rect.y
+
+    # Calculate time since the last print
+    time_since_last_print = (current_time - last_print_time) / 1000  # Convert milliseconds to seconds
+
+    if time_since_last_print >= 1:  # Check if 0.5 seconds have passed
+        # Calculate time difference (in seconds for speed calculation)
+        delta_time = (current_time - prev_time) / 1000  # Convert milliseconds to seconds
+
+        if delta_time > 0:
+            # Calculate the change in position
+            delta_x = current_x - prev_x
+            delta_y = current_y - prev_y
+            
+            # Calculate the instantaneous speed
+            speed = ((delta_x ** 2 + delta_y ** 2) ** 0.5) / delta_time  # Speed in pixels per second
+
+            # Print player position and speed
+            print(f"Player position: ({current_x},{current_y}), Speed: {speed:.2f} pixels/second")
+        
+        # Update the last print time
+        last_print_time = current_time
+
+    # Update the previous position and time for the next frame
+    prev_x, prev_y = current_x, current_y
+    prev_time = current_time
+
+
+def obstacle_movement(obstacle_list, os):
+    if obstacle_list:
+        for obstacle_rect in obstacle_list:
+            obstacle_rect.x -= os
+
+            if obstacle_rect.bottom == 300:
+                screen.blit(snail_surf, obstacle_rect)
+            elif obstacle_rect.bottom == 210:
+                screen.blit(fly_surf, obstacle_rect)
+
+            
+        
+        obstacle_list = [obstacle for obstacle in obstacle_list if obstacle.x > -100]
+        return obstacle_list
+    else: return []
+
+def collisions(player, obstacles):
+    if obstacles:  # Ensure there are obstacles to check
+        for obstacle_rect in obstacles:
+            if player.colliderect(obstacle_rect):  # Check for collision
+                print("Player hit an enemy!")  # Debugging print
+                return False  # End the game on collision
+    return True  # No collision, continue the game
+
+
 
 pygame.init()
 screen = pygame.display.set_mode((800,400))
@@ -63,8 +122,13 @@ ground_surf = pygame.image.load('graphics/ground.png').convert()
 #score_surf = test_font.render('My game', False, (64,64,64))
 #score_rect = score_surf.get_rect(center = (400,50))
 snail_surf = pygame.image.load('graphics/snail1.png').convert_alpha()
-snail_rect = snail_surf.get_rect(bottomright = (600, 300))
+#snail_rect = snail_surf.get_rect(bottomright = (600, 300))
 snail_speed = 4
+
+fly_surf = pygame.image.load('graphics/fly1.png').convert_alpha()
+
+obstacle_rect_list = []
+obstacle_speed = 5
 
 player_surf = pygame.image.load('graphics/player_walk_1.png').convert_alpha()
 player_rect = player_surf.get_rect(midbottom = (80,300))
@@ -102,18 +166,20 @@ onGround = True
 belowGround = False
 
 #toggle modes
-allow_x_movement = True
+allow_x_movement = False
 have_grid = False
 show_pos_player = False
 inf_jumps = False
+borderOn = True
+r_wall = 0
 
 #screens
-snail_screen = True
+menu_screen = True
 shop_screen = False
 
 #Timer
 obstacle_timer = pygame.USEREVENT + 1
-pygame.time.set_timer(obstacle_timer, 900)
+pygame.time.set_timer(obstacle_timer, 1500)
 
 
 #Timer 2
@@ -135,7 +201,7 @@ while True:
 
         if game_active:
             if event.type == pygame.KEYDOWN:
-                if keys[pygame.K_h]:
+                if keys[pygame.K_h] or keys[pygame.K_RCTRL]:
                     if allow_x_movement:
                         allow_x_movement = False
                     elif allow_x_movement == False:
@@ -147,19 +213,37 @@ while True:
                     elif have_grid == False:
                         have_grid = True
                     print("grid: ", have_grid)
-                if keys[pygame.K_p]:
+                if keys[pygame.K_p] or keys[pygame.K_a]:
                     if show_pos_player:
                         show_pos_player = False
                     elif show_pos_player == False:
                         show_pos_player = True
                     print("show player pos: ", show_pos_player)
-                if keys[pygame.K_t]:
+                if keys[pygame.K_t] or keys[pygame.K_s]:
                     inf_jumps = not inf_jumps
                     print("inf jumps on" if inf_jumps else "inf jumps off")
+                if keys[pygame.K_o] or keys[pygame.K_d]:
+                    borderOn = not borderOn
+                    print("borders on" if borderOn else "borders off")
+                if keys[pygame.K_i] or keys[pygame.K_f]:
+                    if r_wall == 0:
+                        r_wall = -200
+                        print("walls off")
+                    elif r_wall == -200:
+                        r_wall = 0
+                        print("walls on")
+                if keys[pygame.K_RSHIFT]:
+                    if obstacle_speed == 5:
+                        obstacle_speed = 0
+                        print("obs speed off")
+                    elif obstacle_speed == 0:
+                        obstacle_speed = 5
+                        print("obs speed on")
+                       
 
                 if keys[pygame.K_r]:
                     game_active = False
-                    snail_screen = True
+                    menu_screen = True
                 if keys[pygame.K_q]:
                     print("Game Exited through Q.")
                     exit()
@@ -210,7 +294,7 @@ while True:
             if event.type == pygame.KEYDOWN:
                 if not game_active:
                     game_active = True
-                    snail_rect.left = 800  # Reset the snail position
+                    #snail_rect.left = 800  # Reset the snail position
                     snail_speed = 4        # Reset snail speed
                     player_rect.midbottom = (80, 300) 
                     start_time = int(pygame.time.get_ticks() / 1000)
@@ -222,10 +306,10 @@ while True:
                     scprinted = False
                     shopprinted = False
 
-            if snail_screen:
+            if menu_screen:
                 
                 if not scprinted:
-                    print("snail screen")
+                    print("menu screen")
                     scprinted = True
 
             elif shop_screen:
@@ -234,9 +318,11 @@ while True:
                     print("shop screen")
                     shopprinted = True
 
-        if event.type == obstacle_timer:
-            #print("timer")
-            pass
+        if event.type == obstacle_timer and game_active:
+            if randint(0,2):
+                obstacle_rect_list.append(snail_surf.get_rect(bottomright = (random.randint(900, 1100), 300)))
+            else:
+                obstacle_rect_list.append(fly_surf.get_rect(bottomright = (randint(900,1100),210)))
         if event.type == pill_timer:
             if not pill_got:
                 speed_factor = 1
@@ -251,7 +337,7 @@ while True:
         if(have_grid):
             draw_grid(800,400)
         if(show_pos_player):
-            showPos()
+            showPos(player_rect)
 
         #pygame.draw.rect(screen, '#c0e8ec', score_rect)
         #pygame.draw.rect(screen, '#c0e8ec', score_rect, 10)
@@ -261,6 +347,7 @@ while True:
         
         #screen.blit(score_surf, score_rect)
 
+        '''
         snail_rect.x -= snail_speed
         screen.blit(snail_surf, snail_rect)
         if snail_rect.right <= 0: 
@@ -268,7 +355,8 @@ while True:
             if random.randint(0,2) == (1 or 2):
                 show_pill = True
                 pill_rect = pill_surf.get_rect(midbottom = (int(random.randrange(250, 750)), (int(random.randrange(50, 300)))))
-            
+        '''
+
         #print(player_rect.left)
 
         #pill
@@ -297,15 +385,20 @@ while True:
             player_rect.right = 0
 
         #left wall
-        elif player_rect.right <= 0:
+        elif player_rect.right <= r_wall:
             print("border crossing at x < 0")
             player_rect.left = 800
 
-        #move to bottom ground
-        if player_rect.bottom <= 0: 
-            print("bottom ground crossing at x < 0")
-            player_rect.bottom = 600
-            belowGround = True
+        if not borderOn:
+            #move to bottom ground
+            if player_rect.bottom <= 0: 
+                print("bottom ground crossing at x < 0")
+                player_rect.bottom = 600
+                belowGround = True
+        elif borderOn:
+            if player_rect.top <= 0:
+                player_rect.top = 0
+                print("ow you hit your head")
         
         #top ground 
         if player_rect.bottom >= 300 and not belowGround: 
@@ -320,7 +413,7 @@ while True:
             belowGround = False
         
         #check if on ground
-        if player_rect.bottom == 300:
+        if player_rect.bottom == 300 or player_rect.bottom == 400:
             onGround = True
         else:
             onGround = False
@@ -336,27 +429,33 @@ while True:
         if pill_rect.collidepoint(mouse_pos):
             print("mouse on pill")
 
+        '''
         if snail_rect.collidepoint(mouse_pos):
             print("mouse on snail")
+        '''
+
+        #obstacles
+        obstacle_rect_list = obstacle_movement(obstacle_rect_list, obstacle_speed)
 
         
-        # touch snail
-        if (player_rect.colliderect(snail_rect)):
-            game_active = False
-            snail_screen = True
+        # collisions
+        game_active = collisions(player_rect, obstacle_rect_list)
+                
+        
         
         if pill_clicked:
             print('click')
             game_active = False
             shop_screen = True
-            snail_screen = False
+            menu_screen = False
             pill_clicked = False
 
 
     else: #INTRO/MENU SCREEN
-        if snail_screen:
+        if menu_screen:
             screen.fill((94,129,162))
             screen.blit(player_stand, player_stand_rect)
+            obstacle_rect_list.clear()
 
             score_message = test_font.render(f"Your score: {score}", False, (111,196,169))
             score_message_rect = score_message.get_rect(center = (400,330))
