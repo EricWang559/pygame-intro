@@ -133,6 +133,7 @@ obstacle_speed = 5
 player_surf = pygame.image.load('graphics/player_walk_1.png').convert_alpha()
 player_rect = player_surf.get_rect(midbottom = (80,300))
 player_gravity = 0
+player_force = 0
 player_xspeed = 0
 speed_factor = 1
 
@@ -151,6 +152,7 @@ game_message_rect = game_message.get_rect(center = (400,320))
 
 scprinted = False
 shopprinted = False
+owprinted = False
 
 
 pill_surf = pygame.image.load('graphics/pill.png').convert_alpha()
@@ -235,9 +237,11 @@ while True:
                 if keys[pygame.K_RSHIFT]:
                     if obstacle_speed == 5:
                         obstacle_speed = 0
+                        player_gravity = 0
                         print("obs speed off")
                     elif obstacle_speed == 0:
                         obstacle_speed = 5
+                        player_force = 0
                         print("obs speed on")
                        
 
@@ -247,6 +251,7 @@ while True:
                 if keys[pygame.K_q]:
                     print("Game Exited through Q.")
                     exit()
+
             
             # Horizontal movement
             if keys[pygame.K_LEFT]:
@@ -260,10 +265,23 @@ while True:
                 
             # Jumping with the up arrow key, only if on the ground
             if (keys[pygame.K_UP] or keys[pygame.K_SPACE]):
-                if onGround:
-                    player_gravity = -20
-                if inf_jumps:
-                    player_gravity = -20
+                if obstacle_speed != 0:
+                    if onGround:
+                        player_gravity = -20
+                    if inf_jumps:
+                        player_gravity = -20
+                else:
+                    player_force = -5
+            if(keys[pygame.K_DOWN]):
+                if obstacle_speed == 0:
+                    if player_gravity < 0:
+                        player_gravity = 0
+                    player_force = 5
+            if keys[pygame.K_UP] and keys[pygame.K_DOWN] and obstacle_speed == 0:
+                player_force = 0
+            if not keys[pygame.K_UP] and not keys[pygame.K_DOWN] and obstacle_speed == 0:
+                player_force = 0
+           
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if player_rect.collidepoint(event.pos):
@@ -305,6 +323,8 @@ while True:
                     pill_rect = pill_surf.get_rect(midbottom = (int(random.randrange(250, 750)), (int(random.randrange(50, 300)))))
                     scprinted = False
                     shopprinted = False
+                    owprinted = False
+                    player_force = 0
 
             if menu_screen:
                 
@@ -318,7 +338,7 @@ while True:
                     print("shop screen")
                     shopprinted = True
 
-        if event.type == obstacle_timer and game_active:
+        if event.type == obstacle_timer and game_active and obstacle_speed != 0:
             if randint(0,2):
                 obstacle_rect_list.append(snail_surf.get_rect(bottomright = (random.randint(900, 1100), 300)))
             else:
@@ -373,8 +393,11 @@ while True:
                 
 
         #player
-        player_gravity += 1
+        if(obstacle_speed != 0):
+            player_gravity += 1
         player_rect.y += player_gravity
+        if obstacle_speed == 0:
+            player_rect.y += player_force
 
         if(allow_x_movement):
             player_rect.x += player_xspeed
@@ -398,7 +421,9 @@ while True:
         elif borderOn:
             if player_rect.top <= 0:
                 player_rect.top = 0
-                print("ow you hit your head")
+                if not owprinted:
+                    owprinted = True
+                    #print("ow you hit your head")
         
         #top ground 
         if player_rect.bottom >= 300 and not belowGround: 
@@ -415,8 +440,11 @@ while True:
         #check if on ground
         if player_rect.bottom == 300 or player_rect.bottom == 400:
             onGround = True
+            owprinted = False
         else:
             onGround = False
+            owprinted = False
+        
 
         screen.blit(player_surf,player_rect)
 
