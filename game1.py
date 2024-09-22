@@ -36,7 +36,7 @@ def display_hp():
 '''
 
 def draw_grid(x, y):
-    for i in range(0,x,50):
+    for i in range(0,x,25):
         pygame.draw.line(screen, 'Black',(0,i),(x,i))
         pygame.draw.line(screen, 'Black',(i,0),(i,x))
 
@@ -77,7 +77,6 @@ def showPos(player_rect):
     prev_x, prev_y = current_x, current_y
     prev_time = current_time
 
-
 def obstacle_movement(obstacle_list, os):
     if obstacle_list:
         for obstacle_rect in obstacle_list:
@@ -101,6 +100,23 @@ def collisions(player, obstacles):
                 print("Player hit an enemy!")  # Debugging print
                 return False  # End the game on collision
     return True  # No collision, continue the game
+
+def player_animation():
+    global player_surf, player_index
+    if player_rect.bottom < 300:
+        #player_surf = player_jump
+        pass
+    else:
+        player_index += 0.1
+        if player_direction:
+            if player_index >= len(player_walk):
+                player_index = 0
+            player_surf = player_walk[int(player_index)]
+        elif not player_direction:
+            if player_index >= len(player_walk_l):
+                player_index = 0
+            player_surf = player_walk_l[int(player_index)]
+
 
 
 
@@ -130,12 +146,24 @@ fly_surf = pygame.image.load('graphics/fly1.png').convert_alpha()
 obstacle_rect_list = []
 obstacle_speed = 5
 
-player_surf = pygame.image.load('graphics/player_walk_1.png').convert_alpha()
+player_walk_1 = pygame.image.load('graphics/player_walk_1.png').convert_alpha()
+player_walk_2 = pygame.image.load('graphics/player_walk_2.png').convert_alpha()
+player_walk_3 = pygame.transform.flip(player_walk_1, True, False)
+player_walk_4 = pygame.transform.flip(player_walk_2, True, False)
+
+player_walk = [player_walk_1, player_walk_2]
+player_walk_l = [player_walk_3, player_walk_4]
+player_index = 0
+player_jump = pygame.image.load('graphics/jump.png').convert_alpha
+
+player_surf = player_walk[player_index]
 player_rect = player_surf.get_rect(midbottom = (80,300))
 player_gravity = 0
+
 player_force = 0
 player_xspeed = 0
 speed_factor = 1
+player_direction = True
 
 #INTRO SCREEN
 player_stand = pygame.image.load('graphics/player_stand.png').convert_alpha()
@@ -168,7 +196,7 @@ onGround = True
 belowGround = False
 
 #toggle modes
-allow_x_movement = False
+allow_x_movement = True
 have_grid = False
 show_pos_player = False
 inf_jumps = False
@@ -203,7 +231,7 @@ while True:
 
         if game_active:
             if event.type == pygame.KEYDOWN:
-                if keys[pygame.K_h] or keys[pygame.K_RCTRL]:
+                if keys[pygame.K_h]:
                     if allow_x_movement:
                         allow_x_movement = False
                     elif allow_x_movement == False:
@@ -243,6 +271,10 @@ while True:
                         obstacle_speed = 5
                         player_force = 0
                         print("obs speed on")
+                if keys[pygame.K_RCTRL]:
+                    speed_factor = 1.5
+                elif not keys[pygame.K_RCTRL]:
+                    speed_factor = 1
                        
 
                 if keys[pygame.K_r]:
@@ -256,8 +288,20 @@ while True:
             # Horizontal movement
             if keys[pygame.K_LEFT]:
                 player_xspeed = -5 * speed_factor  # Move left
+                if allow_x_movement:
+                    player_direction = False
+                if keys[pygame.K_RCTRL]:
+                    speed_factor = 1.5
+                elif not keys[pygame.K_RCTRL]:
+                    speed_factor = 1
             if keys[pygame.K_RIGHT]:
                 player_xspeed = 5 * speed_factor # Move right
+                if allow_x_movement:
+                    player_direction = True
+                if keys[pygame.K_RCTRL]:
+                    speed_factor = 1.5
+                elif not keys[pygame.K_RCTRL]:
+                    speed_factor = 1
             if keys[pygame.K_LEFT] and keys[pygame.K_RIGHT]:
                 player_xspeed = 0
             if not keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
@@ -445,6 +489,7 @@ while True:
             onGround = False
             owprinted = False
         
+        player_animation()
 
         screen.blit(player_surf,player_rect)
 
@@ -484,6 +529,8 @@ while True:
             screen.fill((94,129,162))
             screen.blit(player_stand, player_stand_rect)
             obstacle_rect_list.clear()
+            player_rect.midbottom = (80,300)
+            player_gravity = 0
 
             score_message = test_font.render(f"Your score: {score}", False, (111,196,169))
             score_message_rect = score_message.get_rect(center = (400,330))
